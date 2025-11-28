@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Superhuman
+Comment=The fastest email experience ever made
+Exec=superhuman %U
+Icon=com.superhuman.Superhuman
+Type=Application
+Categories=Network;Email;Office;
+MimeType=x-scheme-handler/mailto;x-scheme-handler/superhuman;
+StartupWMClass=Superhuman
+Terminal=false
+Keywords=email;mail;client;

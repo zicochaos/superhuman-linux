@@ -1,0 +1,20 @@
+# Build artifacts
+dist/
+build-dir/
+.flatpak-builder/
+
+# Windows installer (users download themselves)
+Superhuman.exe
+*.exe
+
+# Temporary files
+*.log
+*.tmp
+
+# Node modules (if any)
+node_modules/
+
+# Claude Code session notes
+CLAUDE.md
+*.png
+!assets/*.png

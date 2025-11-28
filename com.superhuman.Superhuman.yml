@@ -1,0 +1,103 @@
+app-id: com.superhuman.Superhuman
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '24.08'
+command: superhuman
+separate-locales: false
+
+finish-args:
+  # X11 + XShm access
+  - --share=ipc
+  - --socket=x11
+  # Wayland support
+  - --socket=wayland
+  # GPU acceleration
+  - --device=dri
+  # Network access for email
+  - --share=network
+  # Audio for notifications
+  - --socket=pulseaudio
+  # Access to home folder for attachments
+  - --filesystem=home
+  # D-Bus for notifications and tray
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=com.canonical.AppMenu.Registrar
+  # Secret service for credential storage
+  - --talk-name=org.freedesktop.secrets
+  # System tray
+  - --own-name=org.kde.*
+  # mailto: handler
+  - --talk-name=org.freedesktop.portal.Desktop
+  # File picker
+  - --talk-name=org.freedesktop.portal.FileChooser
+
+modules:
+  - name: superhuman
+    buildsystem: simple
+    build-commands:
+      # Extract Windows installer
+      - 7z x -y Superhuman.exe -o"extract"
+      - 7z x -y "extract/\$PLUGINSDIR/app-64.7z" -o"app-win"
+
+      # Extract and patch app.asar
+      - npm install @electron/asar
+      - node_modules/.bin/asar extract app-win/resources/app.asar asar-contents
+
+      # Apply Linux patches
+      - |
+        sed -i "s/if (process.platform === 'darwin') {/if (process.platform === 'darwin' || process.platform === 'linux') {/g" asar-contents/src/native_memory_poller.js
+      - |
+        sed -i "/if (appConfig.isDev) {/a\\    if (process.platform === 'linux') { return }" asar-contents/src/updater.js
+      - |
+        sed -i "s/} else if (process.platform === 'win32') {$/} else if (process.platform === 'win32' || process.platform === 'linux') {/g" asar-contents/src/window.js
+      - |
+        sed -i "s/(process.platform === 'win32' && input.control)/((process.platform === 'win32' || process.platform === 'linux') \&\& input.control)/g" asar-contents/src/window.js
+
+      # Repack app.asar
+      - node_modules/.bin/asar pack asar-contents app.asar
+
+      # Install to flatpak
+      - install -Dm755 electron/electron /app/bin/superhuman
+      - install -Dm644 app.asar /app/lib/superhuman/resources/app.asar
+
+      # Copy Electron resources
+      - cp -r electron/*.pak /app/lib/superhuman/
+      - cp -r electron/*.bin /app/lib/superhuman/
+      - cp -r electron/*.dat /app/lib/superhuman/
+      - cp -r electron/locales /app/lib/superhuman/
+      - cp -r electron/*.so* /app/lib/superhuman/ || true
+      - cp -r electron/LICENSE* /app/lib/superhuman/
+
+      # Install desktop file and icon
+      - install -Dm644 com.superhuman.Superhuman.desktop /app/share/applications/com.superhuman.Superhuman.desktop
+      - install -Dm644 superhuman.png /app/share/icons/hicolor/256x256/apps/com.superhuman.Superhuman.png
+
+    sources:
+      - type: file
+        path: Superhuman.exe
+
+      - type: archive
+        url: https://github.com/electron/electron/releases/download/v38.7.1/electron-v38.7.1-linux-x64.zip
+        sha256: d43bd3ff3f7f9f56825f66a29165ff620d84695d4d06769855acf02c4baa7b9c
+        dest: electron
+
+      - type: file
+        path: com.superhuman.Superhuman.desktop
+
+      - type: file
+        path: assets/superhuman.png
+        dest-filename: superhuman.png
+
+  - name: wrapper-script
+    buildsystem: simple
+    build-commands:
+      - |
+        cat > /app/bin/superhuman << 'EOF'
+        #!/bin/bash
+        export ELECTRON_OZONE_PLATFORM_HINT=auto
+        exec /app/lib/superhuman/superhuman --no-sandbox "$@"
+        EOF
+      - chmod +x /app/bin/superhuman
