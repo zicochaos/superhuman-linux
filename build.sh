@@ -80,14 +80,15 @@ download_electron() {
 install_asar_tool() {
     log_info "Installing asar tool..."
     cd "${BUILD_DIR}"
-    npm install --silent @electron/asar > /dev/null 2>&1
+    npm install @electron/asar || { log_error "Failed to install asar tool"; exit 1; }
 }
 
 extract_and_patch_asar() {
     log_info "Extracting and patching app.asar..."
 
     mkdir -p "${BUILD_DIR}/asar-contents"
-    "${BUILD_DIR}/node_modules/.bin/asar" extract \
+    cd "${BUILD_DIR}"
+    npx @electron/asar extract \
         "${BUILD_DIR}/app-win/resources/app.asar" \
         "${BUILD_DIR}/asar-contents"
 
@@ -96,7 +97,7 @@ extract_and_patch_asar() {
 
     # Repack
     log_info "Repacking app.asar..."
-    "${BUILD_DIR}/node_modules/.bin/asar" pack \
+    npx @electron/asar pack \
         "${BUILD_DIR}/asar-contents" \
         "${BUILD_DIR}/app.asar"
 }
@@ -128,6 +129,12 @@ apply_patches() {
 
     # Patch 5: main.js (entry point) - Add Linux argv URL check like Windows
     sed -i "s/} else if (process.platform === 'win32') {/} else if (process.platform === 'win32' || process.platform === 'linux') {/g" \
+        "${src_dir}/main.js"
+
+    # Patch 6: main.js - Fix async download handler by making mkdir synchronous
+    # Electron's will-download event doesn't properly await async handlers,
+    # so we need to ensure setSavePath is called synchronously
+    sed -i 's/await fs\.promises\.mkdir(downloadsLocation, { recursive: true })/fs.mkdirSync(downloadsLocation, { recursive: true })/g' \
         "${src_dir}/main.js"
 
     log_info "Patches applied successfully."

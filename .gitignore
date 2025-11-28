@@ -16,6 +16,5 @@ node_modules/
 
 # Claude Code session notes
 CLAUDE.md
-LESSONS_LEARNED.md
 *.png
 !assets/*.png
