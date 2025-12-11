@@ -163,7 +163,8 @@ assemble_app() {
 # Superhuman Linux wrapper script
 # Handles OAuth callback URL conversion
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks to find actual script location
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 URL=""
 
 # Process arguments to find and convert URLs
@@ -208,7 +209,8 @@ EOF
 # Superhuman Linux Login Helper
 # Converts the OAuth callback URL and passes it to the app
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks to find actual script location
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 URL="$1"
 
 if [ -z "$URL" ]; then
@@ -267,6 +269,9 @@ mkdir -p "$INSTALL_DIR" "$BIN_DIR" "$APPS_DIR" "$ICONS_DIR"
 cp -r "${SCRIPT_DIR}"/* "$INSTALL_DIR/"
 chmod +x "${INSTALL_DIR}/superhuman"
 chmod +x "${INSTALL_DIR}/superhuman-bin"
+chmod +x "${INSTALL_DIR}/superhuman-login"
+chmod +x "${INSTALL_DIR}/chrome_crashpad_handler"
+chmod +x "${INSTALL_DIR}/chrome-sandbox" 2>/dev/null || true
 
 # Create symlinks in bin
 ln -sf "${INSTALL_DIR}/superhuman" "${BIN_DIR}/superhuman"
