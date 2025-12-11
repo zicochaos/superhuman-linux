@@ -16,10 +16,11 @@ First, download `Superhuman.exe` from [superhuman.com](https://superhuman.com) a
 # Build the Linux version
 ./build.sh
 
-# Extract and install
-tar -xzf dist/superhuman-linux-x64.tar.gz
-cd superhuman-linux
-./install.sh
+# Extract (the tarball is created in the dist/ folder)
+tar -xzf dist/superhuman-linux-x64.tar.gz -C /tmp
+
+# Install
+/tmp/superhuman-linux/install.sh
 ```
 
 The installer will:
@@ -37,9 +38,8 @@ After installation:
 ### Alternative: Run without installing
 
 ```bash
-tar -xzf dist/superhuman-linux-x64.tar.gz
-cd superhuman-linux
-./superhuman
+tar -xzf dist/superhuman-linux-x64.tar.gz -C /tmp
+/tmp/superhuman-linux/superhuman
 ```
 
 ## Google Sign-In
